@@ -3,6 +3,239 @@ import java.util.Scanner;
 import java.util.ArrayList;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.io.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.stream.*;
+
+// ===================== Person (abstract, non-public) =====================
+abstract class Person {
+    protected String hoTen, gioiTinh, diaChi, email;
+    protected int namSinh, SDT;
+    protected boolean trangThai = true;
+
+    public Person() {}
+    public Person(String hoTen, int namSinh, String gioiTinh, String diaChi, int SDT, String email) {
+        this.hoTen = hoTen; this.namSinh = namSinh; this.gioiTinh = gioiTinh;
+        this.diaChi = diaChi; this.SDT = SDT; this.email = email;
+    }
+
+    public String getHoTen() { return hoTen; }
+    public void setHoTen(String v) { hoTen = v; }
+    public int getNamSinh() { return namSinh; }
+    public void setNamSinh(int v) { namSinh = v; }
+    public String getGioiTinh() { return gioiTinh; }
+    public void setGioiTinh(String v) { gioiTinh = v; }
+    public String getDiaChi() { return diaChi; }
+    public void setDiaChi(String v) { diaChi = v; }
+    public int getSDT() { return SDT; }
+    public void setSDT(int v) { SDT = v; }
+    public String getEmail() { return email; }
+    public void setEmail(String v) { email = v; }
+    public boolean isTrangThai() { return trangThai; }
+
+    public abstract String getRole();
+    public abstract void nhap();
+    public abstract void xuat();
+}
+
+// ===================== DocGia (non-public) =====================
+class DocGia extends Person {
+    protected String idDocGia;
+    protected LocalDate ngayDangKy, ngayBatDauCam, ngayKetThucCam;
+    protected boolean biCam = false;
+
+    static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+    public DocGia() {}
+    public DocGia(String id, LocalDate ngayDangKy) {
+        this.idDocGia = id;
+        this.ngayDangKy = ngayDangKy;
+    }
+
+    public String getIdDocGia() { return idDocGia; }
+    public void setIdDocGia(String v) { idDocGia = v; }
+    public LocalDate getNgayDangKy() { return ngayDangKy; }
+    public void setNgayDangKy(LocalDate v) { ngayDangKy = v; }
+    public LocalDate getNgayKetThucCam() { return ngayKetThucCam; }
+    public void setNgayKetThucCam(LocalDate v) { ngayKetThucCam = v; }
+    public boolean isDangBiCam() { return biCam; }
+
+    public void camVoThoiHan() {
+        biCam = true; trangThai = false;
+        ngayBatDauCam = LocalDate.now(); ngayKetThucCam = null;
+        System.out.println("Da cam doc gia " + idDocGia + " vo thoi han.");
+    }
+
+    public void camCoThoiHan(LocalDate ngayKetThuc) {
+        biCam = true; trangThai = false;
+        ngayBatDauCam = LocalDate.now(); ngayKetThucCam = ngayKetThuc;
+        System.out.println("Da cam doc gia " + idDocGia + " den " + ngayKetThuc.format(FMT));
+    }
+
+    public void moCam() {
+        biCam = false; trangThai = true;
+        ngayBatDauCam = null; ngayKetThucCam = null;
+        System.out.println("Da mo cam cho doc gia " + idDocGia);
+    }
+
+    public void capNhatTrangThai() {
+        if (biCam && ngayKetThucCam != null && LocalDate.now().isAfter(ngayKetThucCam))
+            moCam();
+    }
+
+    public String getTrangThai() {
+        if (!biCam) return "Hoat dong";
+        if (ngayKetThucCam == null) return "Bi cam (vo thoi han)";
+        return "Bi cam den " + ngayKetThucCam.format(FMT);
+    }
+
+    @Override
+    public String getRole() { return "Doc gia"; }
+
+    @Override
+    public void nhap() {
+        Scanner sc = new Scanner(System.in);
+        System.out.print("ID: "); idDocGia = sc.nextLine();
+        System.out.print("Ho ten: "); hoTen = sc.nextLine();
+        System.out.print("Nam sinh: "); namSinh = Integer.parseInt(sc.nextLine());
+        System.out.print("Gioi tinh: "); gioiTinh = sc.nextLine();
+        System.out.print("Dia chi: "); diaChi = sc.nextLine();
+        System.out.print("SDT: "); SDT = Integer.parseInt(sc.nextLine());
+        System.out.print("Email: "); email = sc.nextLine();
+        ngayDangKy = LocalDate.now();
+    }
+
+    @Override
+    public void xuat() {
+        System.out.printf("%-8s | %-20s | %d | %-6s | %-10d | %-25s | %s%n",
+            idDocGia, hoTen, namSinh, gioiTinh, SDT, email, getTrangThai());
+    }
+
+    public String toCSV() {
+        return String.join(",", idDocGia, hoTen, String.valueOf(namSinh), gioiTinh,
+            diaChi, String.valueOf(SDT), email,
+            ngayDangKy != null ? ngayDangKy.format(FMT) : "",
+            String.valueOf(biCam),
+            ngayBatDauCam != null ? ngayBatDauCam.format(FMT) : "",
+            ngayKetThucCam != null ? ngayKetThucCam.format(FMT) : "");
+    }
+
+    public static DocGia fromCSV(String line) {
+        String[] p = line.split(",", -1);
+        DocGia dg = new DocGia();
+        dg.idDocGia = p[0]; dg.hoTen = p[1];
+        dg.namSinh = Integer.parseInt(p[2]); dg.gioiTinh = p[3];
+        dg.diaChi = p[4]; dg.SDT = Integer.parseInt(p[5]); dg.email = p[6];
+        dg.ngayDangKy     = p[7].isEmpty()  ? null : LocalDate.parse(p[7],  FMT);
+        dg.biCam          = Boolean.parseBoolean(p[8]);
+        dg.ngayBatDauCam  = p[9].isEmpty()  ? null : LocalDate.parse(p[9],  FMT);
+        dg.ngayKetThucCam = p[10].isEmpty() ? null : LocalDate.parse(p[10], FMT);
+        dg.trangThai = !dg.biCam;
+        return dg;
+    }
+}
+
+// ===================== QuanLyDocGia (non-public) =====================
+class QuanLyDocGia {
+    private ArrayList<DocGia> ds = new ArrayList<>();
+    private static final String FILE = "docgia.csv";
+
+    public void luuFile() {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(FILE))) {
+            bw.write("id,hoTen,namSinh,gioiTinh,diaChi,SDT,email,ngayDangKy,biCam,ngayBatDauCam,ngayKetThucCam");
+            bw.newLine();
+            for (DocGia dg : ds) { bw.write(dg.toCSV()); bw.newLine(); }
+        } catch (IOException e) { System.out.println("Loi luu file: " + e.getMessage()); }
+    }
+
+    public void docFile() {
+        ds.clear();
+        try (BufferedReader br = new BufferedReader(new FileReader(FILE))) {
+            String line; boolean firstLine = true;
+            while ((line = br.readLine()) != null) {
+                if (firstLine) { firstLine = false; continue; }
+                if (!line.trim().isEmpty()) {
+                    DocGia dg = DocGia.fromCSV(line);
+                    dg.capNhatTrangThai();
+                    ds.add(dg);
+                }
+            }
+        } catch (IOException e) { System.out.println("Chua co file, bat dau moi."); }
+    }
+
+    public DocGia timTheoID(String id) {
+        return ds.stream().filter(dg -> dg.getIdDocGia().equalsIgnoreCase(id)).findFirst().orElse(null);
+    }
+
+    public void camDocGiaVoThoiHan(String id) {
+        DocGia dg = timTheoID(id);
+        if (dg == null) { System.out.println("Khong tim thay ID: " + id); return; }
+        dg.camVoThoiHan(); luuFile();
+    }
+
+    public void camDocGiaCoThoiHan(String id, LocalDate ngayKetThuc) {
+        DocGia dg = timTheoID(id);
+        if (dg == null) { System.out.println("Khong tim thay ID: " + id); return; }
+        dg.camCoThoiHan(ngayKetThuc); luuFile();
+    }
+
+    public void moCamDocGia(String id) {
+        DocGia dg = timTheoID(id);
+        if (dg == null) { System.out.println("Khong tim thay ID: " + id); return; }
+        dg.moCam(); luuFile();
+    }
+
+    public void sapXepTheoTen() {
+        ds.sort(Comparator.comparing(DocGia::getHoTen, String.CASE_INSENSITIVE_ORDER));
+    }
+
+    public void sapXepTheoNgayDangKy() {
+        ds.sort(Comparator.comparing(dg -> dg.getNgayDangKy() != null ? dg.getNgayDangKy() : LocalDate.MIN));
+    }
+
+    public void sapXepTheoNgayKetThucCam() {
+        ds.sort(Comparator.comparing(dg -> dg.getNgayKetThucCam() != null ? dg.getNgayKetThucCam() : LocalDate.MAX));
+    }
+
+    public List<DocGia> locVaSapXep(String loc, String sapXep) {
+        List<DocGia> kq = ds.stream().filter(dg -> switch (loc.toLowerCase()) {
+            case "hoatdong" -> !dg.isDangBiCam();
+            case "bicam"    ->  dg.isDangBiCam();
+            default         -> true;
+        }).collect(Collectors.toList());
+
+        switch (sapXep.toLowerCase()) {
+            case "ten"            -> kq.sort(Comparator.comparing(DocGia::getHoTen, String.CASE_INSENSITIVE_ORDER));
+            case "ngaydangky"     -> kq.sort(Comparator.comparing(dg -> dg.getNgayDangKy() != null ? dg.getNgayDangKy() : LocalDate.MIN));
+            case "ngayketthuccam" -> kq.sort(Comparator.comparing(dg -> dg.getNgayKetThucCam() != null ? dg.getNgayKetThucCam() : LocalDate.MAX));
+        }
+        return kq;
+    }
+
+    public void hienThiDanhSach() { hienThiDanhSach(ds); }
+
+    public void hienThiDanhSach(List<DocGia> list) {
+        if (list.isEmpty()) { System.out.println("Danh sach trong."); return; }
+        System.out.printf("%-8s | %-20s | %-4s | %-6s | %-10s | %-25s | %s%n",
+            "ID", "Ho Ten", "NS", "GT", "SDT", "Email", "Trang Thai");
+        System.out.println("-".repeat(100));
+        for (DocGia dg : list) dg.xuat();
+    }
+
+    public void themDocGia(DocGia dg) {
+        if (timTheoID(dg.getIdDocGia()) != null) { System.out.println("ID da ton tai!"); return; }
+        ds.add(dg); luuFile();
+        System.out.println("Da them: " + dg.getHoTen());
+    }
+
+    public ArrayList<DocGia> getDanhSach() { return ds; }
+}
+
+// ===================== Main (public - tên file phải là Main.java) =====================
+
+
 class ChiTietMuon
 {
     Document TL;
@@ -416,5 +649,25 @@ class QuanLyPhieuTra
                     System.out.println("Lua chon khong hop le. Vui long chon lai.");
             }
         }
+    }
+}
+ class Main {
+    public static void main(String[] args) {
+        QuanLyDocGia ql = new QuanLyDocGia();
+
+        ql.docFile();
+        ql.hienThiDanhSach();
+
+        System.out.println("\n--- Thu cam DG003 co thoi han ---");
+        ql.camDocGiaCoThoiHan("DG003", LocalDate.of(2026, 6, 30));
+
+        System.out.println("\n--- Mo cam DG004 ---");
+        ql.moCamDocGia("DG004");
+
+        System.out.println("\n--- Danh sach dang bi cam ---");
+        ql.hienThiDanhSach(ql.locVaSapXep("bicam", "ten"));
+
+        ql.luuFile();
+        System.out.println("\nDone!");
     }
 }
