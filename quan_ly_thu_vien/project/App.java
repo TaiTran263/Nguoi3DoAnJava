@@ -1335,6 +1335,10 @@ class PhieuMuon
             }
             if(choice ==3)
                 return false;
+            if(choice ==4)
+            {
+                quanlyTaiLieu.hienThiDanhSachTaiLieu();
+            }
             else {System.out.println("vui long chon option 1 hoac 2 hoac 3!");}
         }
         return true; 
@@ -1524,7 +1528,7 @@ class QuanLyPhieuMuon implements IQuanly
                         Tailieu TL=qltv.getThuVien().getDsTaiLieu().stream().filter(t->t.getIDTaiLieu().equals(idTL)).findFirst().orElse(null);
                         
                         if (TL == null) {
-                            TL = new Sach(idTL, "[Tài liệu đã bị xóa]", "Unknown", 0, 0, 0, "Unknown");
+                            TL = new Sach(idTL, "[Tai lieu da bi xoa]", "Unknown", 0, 0, 0, "Unknown");
                         }
                         
                         ChiTietMuon ct=new ChiTietMuon(TL, Integer.parseInt(p[2]), LocalDate.parse(p[3]), LocalDate.parse(p[4]));
@@ -1855,6 +1859,15 @@ class QuanLyPhieuTra implements IQuanly
             System.out.println();
         }
     }
+    public void HienThiPhieuTraQuaHan()
+    {  
+        for(PhieuTra phieuTra: DanhSachPhieuTra)
+        {
+            System.out.println("Ma Phieu Tra: "+ phieuTra.MaPhieuTra);
+            String trangThai= phieuTra.phieuMuon.kiemTraDaTraHet() ? "[Da tra]":"[Chua tra het]";
+            
+        }
+    }
 
     @Override
     public void menu (Scanner sc)
@@ -1866,6 +1879,7 @@ class QuanLyPhieuTra implements IQuanly
             System.out.println("2. Tim Phieu Tra Theo Ma");
             System.out.println("3. Tim Phieu Tra Theo Ten Nguoi Tra");
             System.out.println("4. Hien Thi Tat Ca Phieu Tra");
+            System.out.println("5. Hien thi cac phieu tra qua han");
             System.out.println("0. Thoat");
             System.out.print("Chon chuc nang: ");
            
@@ -1964,7 +1978,7 @@ class QuanLyPhieuTra implements IQuanly
                                 }
                                 else
                                     {tlcantra=ct;}
-                                break;
+                                
                             }
                         }
                         if (tlcantra == null)
